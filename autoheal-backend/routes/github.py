@@ -371,7 +371,7 @@ async def analyze_repo(owner: str, repo: str):
     if not api_key:
         raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("models/gemini-2.5-flash")
+    model = genai.GenerativeModel("models/gemini-2.0-flash")
 
     context_parts = []
     
