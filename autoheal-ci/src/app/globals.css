@@ -46,6 +46,20 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  button, [role="button"], a, label[for] {
+    cursor: pointer;
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  /* Don't apply press to links or non-button elements */
+  a:active {
+    transform: none;
+  }
+
+
   ::selection {
     background: rgba(139, 92, 246, 0.3);
     color: #f1f5f9;
