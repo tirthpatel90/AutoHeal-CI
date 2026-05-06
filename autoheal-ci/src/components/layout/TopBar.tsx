@@ -1,24 +1,44 @@
 'use client';
 import Link from 'next/link';
-import { Search, Zap, Bell, Command, ChevronDown, GitBranch } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Zap, Bell, Command, ChevronDown, GitBranch, LogOut, Settings } from 'lucide-react';
 import { useRepo } from '@/lib/RepoContext';
+import { useAuth } from '@/lib/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 
 export default function TopBar() {
   const { connectedRepos, selectedRepo, selectRepo } = useRepo();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    logout();
+    router.push('/login');
+  };
+
+  const userInitials = user?.name
+    ? user.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+    : 'AH';
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -110,14 +130,60 @@ export default function TopBar() {
             </span>
             <span className="text-[11px] text-neon-green/80 font-mono font-medium">Online</span>
           </div>
-          <button className="relative p-2 rounded-xl hover:bg-graphite-lighter/50 text-text-muted hover:text-text-secondary transition-all duration-200 group">
+          <motion.button
+            className="relative p-2 rounded-xl text-text-muted transition-colors duration-200 hover:text-text-secondary hover:bg-graphite-lighter/50"
+            whileHover={{ rotate: [0, -8, 8, -4, 0], transition: { duration: 0.4 } }}
+            whileTap={{ scale: 0.9 }}
+          >
             <Bell className="w-4 h-4" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-violet shadow-sm shadow-violet/50">
               <span className="absolute inset-0 rounded-full bg-violet animate-ping opacity-40" />
             </span>
-          </button>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet to-electric flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-violet/15 ring-2 ring-graphite ring-offset-0">
-            AH
+          </motion.button>
+          {/* User avatar + menu */}
+          <div className="relative" ref={userMenuRef}>
+            <motion.button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              title={user?.name ?? 'Account'}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-violet to-electric flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-violet/20 ring-2 ring-graphite hover:shadow-lg hover:shadow-violet/35 hover:ring-violet/20 transition-shadow duration-200"
+            >
+              {userInitials}
+            </motion.button>
+
+            <AnimatePresence>
+            {showUserMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute top-full right-0 mt-2 w-56 bg-graphite-light border border-graphite-border/40 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden z-50 py-1"
+              >
+                {user && (
+                  <div className="px-4 py-3 border-b border-graphite-border/20">
+                    <p className="text-sm font-semibold text-text-primary truncate">{user.name}</p>
+                    <p className="text-[11px] text-text-muted font-mono truncate">{user.email}</p>
+                  </div>
+                )}
+                <Link
+                  href="/settings"
+                  onClick={() => setShowUserMenu(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-graphite-hover/40 transition-colors"
+                >
+                  <Settings className="w-4 h-4" /> Settings
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-crimson hover:bg-crimson/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </motion.div>
+            )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
