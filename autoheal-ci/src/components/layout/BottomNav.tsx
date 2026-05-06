@@ -85,16 +85,16 @@ export default function BottomNav() {
                   {isActive && (
                     <motion.div
                       layoutId="dock-active-bg"
-                      className="absolute inset-0 rounded-xl bg-violet/12 border border-violet/15"
+                      className="absolute inset-0 rounded-xl bg-violet/12 border border-violet/20 shadow-[0_0_12px_rgba(139,92,246,0.12)]"
                       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
-                  <Icon className="w-[18px] h-[18px] relative z-10" />
+                  <Icon className={`w-[18px] h-[18px] relative z-10 transition-colors duration-200 ${isActive ? 'text-violet' : isHovered ? 'text-text-primary' : 'text-text-muted'}`} />
                 </div>
                 {isActive && (
                   <motion.div
                     layoutId="dock-active-dot"
-                    className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-violet shadow-sm shadow-violet/50"
+                    className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-violet shadow-[0_0_6px_rgba(139,92,246,0.8)]"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
