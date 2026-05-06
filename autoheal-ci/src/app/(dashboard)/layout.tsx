@@ -1,10 +1,40 @@
 'use client';
 import TopBar from '@/components/layout/TopBar';
 import BottomNav from '@/components/layout/BottomNav';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { RepoProvider } from '@/lib/RepoContext';
+import { useAuth } from '@/lib/AuthContext';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Zap } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // While checking session, show a full-screen loader
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-graphite flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet to-electric flex items-center justify-center shadow-lg shadow-violet/20 animate-pulse">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <p className="text-xs font-mono text-text-muted">Loading AutoHeal CI…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated — don't render anything while redirect fires
+  if (!isAuthenticated) return null;
+
   return (
     <RepoProvider>
       <div className="min-h-screen bg-graphite">
@@ -28,3 +58,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </RepoProvider>
   );
 }
+
