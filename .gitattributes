@@ -1,0 +1,7 @@
+# Mark the frontend as vendored to prevent it from dominating language stats
+autoheal-ci/** linguist-vendored
+autoheal-ci/src/components/** linguist-documentation
+autoheal-ci/src/app/** linguist-documentation
+
+# Ensure Python is recognized as the primary language
+*.py linguist-detectable=true
