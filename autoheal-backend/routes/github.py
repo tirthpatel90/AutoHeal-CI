@@ -6,6 +6,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from config import settings
+from core.agent import agent
+
 router = APIRouter()
 
 # --- Persistence ---
@@ -32,7 +35,7 @@ def _save_connected_repos(repos: dict):
 def _get_headers() -> dict:
     """Get GitHub API headers with token if available."""
     headers = {"Accept": "application/vnd.github.v3+json"}
-    token = os.getenv("GITHUB_ACCESS_TOKEN")
+    token = settings.github_access_token
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
@@ -363,15 +366,10 @@ async def analyze_repo(owner: str, repo: str):
     """
     Analyze a repo's CI/CD setup and predict pipeline health using Git Trees API for max speed.
     """
-    import google.generativeai as genai
     import asyncio
     import re
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("models/gemini-2.0-flash")
+    # Core AI logic is now handled by agent.py, so we skip local gemini setup
 
     context_parts = []
     
@@ -459,45 +457,15 @@ async def analyze_repo(owner: str, repo: str):
                 recent_runs_summary = "\n".join(run_summaries)
                 context_parts.append("Recent CI/CD Runs:\n" + recent_runs_summary)
 
-    # Build the AI prompt
+    # Build the AI prompt context
     full_context = "\n\n".join(context_parts)
 
-    prompt = f"""
-You are an expert CI/CD and DevOps engineer. Analyze the following GitHub repository data and predict CI/CD pipeline health.
-
-{full_context}
-
-Based on this analysis, provide your assessment in the following JSON format strictly:
-{{
-    "failure_probability": 0.0 to 1.0,
-    "risk_level": "low" | "medium" | "high" | "critical",
-    "likely_causes": [
-        {{"cause": "description of potential issue", "confidence": 0.0 to 1.0}}
-    ],
-    "summary": "Brief overall assessment of the CI/CD health",
-    "recommendations": ["recommendation 1", "recommendation 2"],
-    "ci_config_found": true | false,
-    "analyzed_files": number of files analyzed
-}}
-
-If no explicit CI/CD configuration is found, provide recommendations based on the repo structure (e.g. recommend a workflow to add).
-Do not wrap the JSON in markdown code blocks. Return only the raw JSON.
-"""
-
     try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-
-        # Clean markdown wrappers
-        if text.startswith("```json"):
-            text = text[7:]
-        if text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-
-        import json as json_module
-        result = json_module.loads(text.strip())
+        # Use the Agent to analyze the full repo context
+        result = agent.analyze_repo_full(
+            full_context=full_context,
+            analyzed_files_count=len(target_files) if target_files else 0
+        )
         
         # Override these since we dynamically tracked them
         result["ci_config_found"] = ci_config_found
