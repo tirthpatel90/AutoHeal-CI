@@ -1,22 +1,8 @@
 'use client';
 import { motion } from 'framer-motion';
 import GlowCard from '@/components/ui/GlowCard';
-import AnimatedCounter from '@/components/ui/AnimatedCounter';
-import { mockLearningStats, mockKnowledgeBase } from '@/lib/mock-data';
-import { GraduationCap, Brain, Target, TrendingUp, Sparkles, Database, ArrowRight } from 'lucide-react';
-import {
-  AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
-} from 'recharts';
-
-const COLORS = ['#34d399', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
-
-const errorTypeData = Object.entries(
-  mockKnowledgeBase.reduce<Record<string, number>>((acc, e) => {
-    acc[e.errorType] = (acc[e.errorType] || 0) + e.occurrenceCount;
-    return acc;
-  }, {})
-).map(([name, value]) => ({ name, value }));
+import { useRepo } from '@/lib/RepoContext';
+import { GraduationCap, Brain, Target, Sparkles, ArrowRight, GitBranch, Plus, Database } from 'lucide-react';
 
 const container = {
   initial: {},
@@ -28,13 +14,7 @@ const fadeUp = {
 };
 
 export default function LearningPage() {
-  const stats = mockLearningStats;
-  const statCards = [
-    { label: 'Errors Learned', value: stats.totalErrorsLearned, icon: Database, color: '#8b5cf6', accentBorder: 'border-l-violet' },
-    { label: 'Fix Success Rate', value: stats.autoFixSuccessRate * 100, suffix: '%', icon: Target, color: '#34d399', accentBorder: 'border-l-neon-green' },
-    { label: 'Prediction Accuracy', value: stats.predictionAccuracy * 100, suffix: '%', icon: Brain, color: '#f59e0b', accentBorder: 'border-l-amber' },
-    { label: 'Total Fix Attempts', value: stats.totalFixAttempts, icon: Sparkles, color: '#3b82f6', accentBorder: 'border-l-electric' },
-  ];
+  const { selectedRepo, connectedRepos } = useRepo();
 
   return (
     <motion.div variants={container} initial="initial" animate="animate" className="space-y-6">
@@ -43,8 +23,14 @@ export default function LearningPage() {
         <p className="text-sm text-text-secondary mt-1">Self-improving AI that learns from every pipeline run</p>
       </motion.div>
 
+      {/* Stats - will populate over time */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {statCards.map((card) => {
+        {[
+          { label: 'Repos Analyzed', value: connectedRepos.length, icon: Database, color: '#8b5cf6', accentBorder: 'border-l-violet' },
+          { label: 'Patterns Detected', value: 0, icon: Target, color: '#34d399', accentBorder: 'border-l-neon-green' },
+          { label: 'Predictions Made', value: 0, icon: Brain, color: '#f59e0b', accentBorder: 'border-l-amber' },
+          { label: 'Fixes Suggested', value: 0, icon: Sparkles, color: '#3b82f6', accentBorder: 'border-l-electric' },
+        ].map((card) => {
           const Icon = card.icon;
           return (
             <motion.div key={card.label} variants={fadeUp} className={`bg-graphite-light/80 border border-graphite-border/40 border-l-2 ${card.accentBorder} rounded-2xl p-5 hover:bg-graphite-hover/40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/15 group`}>
@@ -54,7 +40,7 @@ export default function LearningPage() {
                 </div>
                 <div>
                   <p className="text-[11px] text-text-muted font-mono uppercase tracking-wider">{card.label}</p>
-                  <p className="text-2xl font-bold" style={{ color: card.color }}><AnimatedCounter target={card.value} suffix={card.suffix} /></p>
+                  <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
                 </div>
               </div>
             </motion.div>
@@ -62,69 +48,32 @@ export default function LearningPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <motion.div variants={fadeUp} className="lg:col-span-2">
-          <GlowCard glowColor="green" hover={false}>
-            <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-4 h-4 text-neon-green" /><h3 className="text-[11px] font-mono text-text-muted uppercase tracking-wider">Learning Growth Over Time</h3></div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.learningGrowth}>
-                  <defs>
-                    <linearGradient id="errorsG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34d399" stopOpacity={0.15} /><stop offset="95%" stopColor="#34d399" stopOpacity={0} /></linearGradient>
-                    <linearGradient id="fixesG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} /><stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} /></linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" stroke="#475569" fontSize={11} fontFamily="JetBrains Mono" tickLine={false} axisLine={false} />
-                  <YAxis stroke="#475569" fontSize={11} fontFamily="JetBrains Mono" tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: '#11131a', border: '1px solid #252836', borderRadius: '12px', fontFamily: 'JetBrains Mono', fontSize: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }} />
-                  <Area type="monotone" dataKey="errors" stroke="#34d399" fill="url(#errorsG)" strokeWidth={2} name="Errors Learned" />
-                  <Area type="monotone" dataKey="fixes" stroke="#8b5cf6" fill="url(#fixesG)" strokeWidth={2} name="Fixes Applied" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </GlowCard>
-        </motion.div>
-
-        <motion.div variants={fadeUp}>
-          <GlowCard glowColor="violet" hover={false}>
-            <h3 className="text-[11px] font-mono text-text-muted uppercase tracking-wider mb-4">Error Type Distribution</h3>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={errorTypeData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                    {errorTypeData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} opacity={0.75} />))}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: '#11131a', border: '1px solid #252836', borderRadius: '12px', fontFamily: 'JetBrains Mono', fontSize: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-1.5 mt-2">
-              {errorTypeData.map((entry, i) => (
-                <div key={entry.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} /><span className="text-text-secondary capitalize">{entry.name}</span></div>
-                  <span className="font-mono text-text-primary">{entry.value}</span>
-                </div>
-              ))}
-            </div>
-          </GlowCard>
-        </motion.div>
-      </div>
-
+      {/* Empty state - learning will populate */}
       <motion.div variants={fadeUp}>
-        <GlowCard glowColor="amber" hover={false}>
-          <div className="flex items-center gap-2 mb-4"><GraduationCap className="w-4 h-4 text-amber" /><h3 className="text-[11px] font-mono text-text-muted uppercase tracking-wider">Prediction Accuracy Over Time</h3></div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.learningGrowth}>
-                <XAxis dataKey="month" stroke="#475569" fontSize={11} fontFamily="JetBrains Mono" tickLine={false} axisLine={false} />
-                <YAxis stroke="#475569" fontSize={11} fontFamily="JetBrains Mono" tickLine={false} axisLine={false} domain={[0, 1]} tickFormatter={(v) => `${(Number(v) * 100).toFixed(0)}%`} />
-                <Tooltip contentStyle={{ background: '#11131a', border: '1px solid #252836', borderRadius: '12px', fontFamily: 'JetBrains Mono', fontSize: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }} formatter={(v) => `${(Number(v) * 100).toFixed(0)}%`} />
-                <Line type="monotone" dataKey="accuracy" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, stroke: '#f59e0b', strokeWidth: 2, fill: '#11131a' }} name="Accuracy" />
-              </LineChart>
-            </ResponsiveContainer>
+        <GlowCard glowColor="violet" hover={false}>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 rounded-2xl bg-violet/8 border border-violet/15 flex items-center justify-center mb-4">
+              <GraduationCap className="w-8 h-8 text-violet" />
+            </div>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Learning Engine Initializing</h3>
+            <p className="text-sm text-text-muted text-center max-w-md mb-6">
+              The learning engine will build its knowledge base as you analyze more repositories and run predictions.
+              Each analysis contributes to improving future predictions.
+            </p>
+            {!selectedRepo ? (
+              <a href="/repositories" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet to-electric text-white font-semibold text-sm">
+                <Plus className="w-4 h-4" /> Connect a Repository to Start Learning
+              </a>
+            ) : (
+              <a href="/predictions" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet to-electric text-white font-semibold text-sm">
+                <Brain className="w-4 h-4" /> Run AI Prediction
+              </a>
+            )}
           </div>
         </GlowCard>
       </motion.div>
 
+      {/* Self-learning loop visualization */}
       <motion.div variants={fadeUp}>
         <GlowCard glowColor="violet" hover={false}>
           <h3 className="text-[11px] font-mono text-text-muted uppercase tracking-wider mb-6">Self-Learning Feedback Loop</h3>
