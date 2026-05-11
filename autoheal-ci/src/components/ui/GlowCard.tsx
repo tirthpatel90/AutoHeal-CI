@@ -49,14 +49,15 @@ export default function GlowCard({ children, className = '', glowColor = 'violet
       ref={cardRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={hover ? { y: -3, transition: { type: 'spring', stiffness: 300, damping: 20 } } : {}}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] as const }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`
         relative overflow-hidden
         bg-graphite-light/80 border border-graphite-border/50 rounded-2xl p-5
-        transition-all duration-300 ease-out
-        ${hover ? 'hover:border-graphite-border/80 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5' : ''}
+        transition-[border-color,box-shadow] duration-300 ease-out
+        ${hover ? 'hover:border-graphite-border/80 hover:shadow-lg hover:shadow-black/20' : ''}
         ${className}
       `}
     >
